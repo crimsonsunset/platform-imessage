@@ -104,6 +104,8 @@ export type SwiftServer = {
   decodeAttributedString: (data: Buffer) => (Fragment[] | undefined)
   /** Search messages by text content, properly decoding attributedBody. Returns ROWIDs of matching messages. */
   searchMessages: (query: string, chatGUID?: string, mediaOnly?: boolean, sender?: string, limit?: number) => Promise<number[]>
+  /** Resolves a phone number or email to a display name via macOS Contacts. Returns undefined if not found or access not granted. */
+  lookupContact?: (emailOrPhoneNumber: string) => string | undefined
   messagesControllerClass: typeof MessagesController
   askForMessagesDirAccess: () => Promise<void>
   askForAutomationAccess: () => Promise<void>
