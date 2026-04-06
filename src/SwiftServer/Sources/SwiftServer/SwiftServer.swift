@@ -83,12 +83,21 @@ enum Preferences {
     // strongly retained by askForMessagesDirAccess, deinit called on exit
     let accessManager = MessagesAccessManager()
     var pollingTask: Task<Void, Never>?
+    let contacts = Contacts()
 
     var dict: [String: NodePropertyConvertible] = try [
         "hashers": [
             "thread": try Hasher.thread.nodeValue(),
             "participant": try Hasher.participant.nodeValue(),
         ].nodeValue(),
+
+        "lookupContact": NodeFunction { (id: String) -> NodeValueConvertible in
+            guard let contacts,
+                  let contact = contacts.firstMatching(emailOrPhoneNumber: id),
+                  let name = contacts.formatPreferringShortStyle(contact: contact)
+            else { return undefined }
+            return name
+        },
 
         "appleInterfaceStyle": NodeProperty { _ in
             UserDefaults.standard.string(forKey: "AppleInterfaceStyle")

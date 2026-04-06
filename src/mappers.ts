@@ -654,8 +654,12 @@ function mapParticipant({ participantID: id, uncanonicalized_id }: MappedHandleR
     participant.fullName = chatDisplayName
   } else if (isEmail) {
     participant.email = id
+    const resolvedEmailName = swiftServer?.lookupContact?.(id)
+    if (resolvedEmailName) participant.fullName = resolvedEmailName
   } else if (isPhone) {
     participant.phoneNumber = id
+    const resolvedPhoneName = swiftServer?.lookupContact?.(id)
+    if (resolvedPhoneName) participant.fullName = resolvedPhoneName
   } else if (likelyAlphanumericSenderID(idPreferringUncanonicalized)) {
     // Use the `username` field to avoid first/last name splitting treatments
     // and keep the sender ID as-is.
@@ -737,7 +741,7 @@ export function mapThread(chat: MappedChatRow, context: Context): BeeperThread {
   const thread: BeeperThread = {
     _original: stringifyWithArrayBuffers([chat, handleRows]),
     id: chat.guid,
-    title: chat.display_name,
+    title: chat.display_name || (!isGroup ? swiftServer?.lookupContact?.(chat.chat_identifier) : undefined),
     imgURL: getChatPhotoGuid(),
     // catalina and lower:
     // mutedUntil: props?.ignoreAlertsFlag ? 'forever' : undefined,
