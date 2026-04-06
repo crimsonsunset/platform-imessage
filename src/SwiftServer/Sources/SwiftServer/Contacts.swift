@@ -106,6 +106,16 @@ final class Contacts {
 }
 
 extension Contacts {
+    /// Scores a contact by data completeness. Higher is better.
+    /// Prefers nickname > given+family > given only > family only > bare identifier.
+    private func completenessScore(_ contact: CNContact) -> Int {
+        var score = 0
+        if !contact.nickname.isEmpty { score += 4 }
+        if !contact.givenName.isEmpty { score += 2 }
+        if !contact.familyName.isEmpty { score += 1 }
+        return score
+    }
+
     func firstMatching(emailOrPhoneNumber: String) -> CNContact? {
         let isEmail = emailOrPhoneNumber.contains("@")
         let predicate = isEmail
@@ -114,10 +124,13 @@ extension Contacts {
             : CNContact.predicateForContacts(matching: CNPhoneNumber(stringValue: emailOrPhoneNumber))
 
         let contacts = try? store.unifiedContacts(matching: predicate, keysToFetch: contactKeysToFetch(isEmail: isEmail))
-        if let contacts, contacts.count > 1 {
-            log.warning("firstMatching: more than one contact matched the desired criteria")
+        guard let contacts, !contacts.isEmpty else { return nil }
+
+        if contacts.count > 1 {
+            log.warning("firstMatching: \(contacts.count) contacts matched — picking most complete")
         }
-        return contacts?.first
+
+        return contacts.max(by: { completenessScore($0) < completenessScore($1) })
     }
 
     func format(contact: CNContact, style: FormatStyle = .standard) -> String? {
